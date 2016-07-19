@@ -3,45 +3,70 @@
 package main
 
 import (
-//	"fmt"
+	"fmt"
 //    "html"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"database/sql"
 	_ "github.com/lib/pq"
 	"github.com/bmizerany/pat"
-	"local/twit/twitutil"
+//	"local/twit/twitutil"
+	"github.com/spf13/viper"
 )
 
-const (
-    DB_HOST = ""
-    DB_NAME = "foo"
-    DB_USER = "foo"
-    DB_PASS = "foo"
-)
+func getDbConfig() (string, string) {
+	viper.SetConfigType("yaml")
+	viper.SetConfigName("dbconf")
+	viper.AddConfigPath("./db/")   // right now dbconf is only config
+	err := viper.ReadInConfig()
+	if err != nil {
+	    panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
+
+	env := viper.GetString("environment")
+	dbDriverField := fmt.Sprintf("%s.driver", env)
+	dbDriver := viper.GetString(dbDriverField)
+	openField := fmt.Sprintf("%s.open", env)
+	dbOpen := viper.GetString(openField)
+	return dbDriver, dbOpen
+}
 
 func AllTweets(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "AllTweets!")
-	db, err := sql.Open("postgres", "user=DB_USER dbname=DB_NAME sslmode=disable")
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
-	rows, err := db.Query("SELECT id, user_id, text FROM users")
+	rows, err := db.Query("SELECT id, user_id, message FROM t_tweet")
 	if err != nil {
 		log.Fatal(err)
 	}
-/*	for rows.Next() {
-		var name string
-		if err := rows.Scan(&id); err != nil {
+	defer rows.Close()
+
+	type Tweet struct {
+	    Id int
+	    UserId int
+	    Message string
+	}
+
+	tweetsSlice := []Tweet{}
+	for rows.Next() {
+		tweet := Tweet{}
+		err := rows.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
+		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%s is foo\n", id)
+		// fmt.Println(tweet)
+		tweetsSlice = append(tweetsSlice, tweet)
 	}
-	if err := rows.Err(); err != nil {
+	b, err := json.Marshal(tweetsSlice)
+	w.Write(b)
+	err = rows.Err()
+	if err != nil {
 		log.Fatal(err)
 	}
-*/
 }
 
 func CreateTweet(w http.ResponseWriter, req *http.Request) {
@@ -50,7 +75,8 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	tweetText := req.URL.Query().Get(":tweetText")
 	//io.WriteString(w, "CreateTweet " + tweetId)
-	db, err := sql.Open("postgres", "user=DB_USER dbname=DB_NAME sslmode=disable")
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,33 +86,39 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 		userId,
 		tweetText,
 	)
+	fmt.Println(result)
 }
 
 func GetTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
 	io.WriteString(w, "GetTweet " + tweetId)
-	db, err := sql.Open("postgres", "user=DB_USER dbname=DB_NAME sslmode=disable")
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
 	row := db.QueryRow("SELECT id, user_id, text FROM users WHERE id = $1", tweetId)
 //	err := row.Scan(&id)
+	fmt.Println(row)
 }
 
 func DeleteTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
-	db, err := sql.Open("postgres", "user=DB_USER dbname=DB_NAME sslmode=disable")
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
 	io.WriteString(w, "DeleteTweet " + tweetId)
 	result, err := db.Exec("DELETE FROM tweets WHERE id = $1", tweetId)
+	fmt.Println(result)
 }
 
 func UserTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	io.WriteString(w, "UserTweets " + userId)
-	db, err := sql.Open("postgres", "user=DB_USER dbname=DB_NAME sslmode=disable")
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -105,13 +137,19 @@ func UserTweets(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 */
+	fmt.Println(rows)
 }
 
 func FollowedTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	io.WriteString(w, "UserFollowingTweets " + userId)
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
 	// will have to use redis for this
+	fmt.Println(db)
+	fmt.Println(err)
 }
+
 
 func main() {
     m := pat.New()

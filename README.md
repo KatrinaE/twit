@@ -41,3 +41,7 @@ timeline, it is a series of IDs of pieces of activity, so there’s favorite ID,
 a reply ID, etc.
 
 Discovery is a customized search based on what they know about you.
+
+ Native list structure are used inside Redis.
+
+What is being stored is the tweet ID of the generated tweet, the user ID of the originator of the tweet, and 4 bytes of bits used to mark if it’s a retweet or a reply or something else. 
