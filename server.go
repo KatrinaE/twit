@@ -91,15 +91,19 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 
 func GetTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
-	io.WriteString(w, "GetTweet " + tweetId)
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
-	row := db.QueryRow("SELECT id, user_id, text FROM users WHERE id = $1", tweetId)
-//	err := row.Scan(&id)
-	fmt.Println(row)
+	row := db.QueryRow("SELECT id, user_id, message FROM t_tweet WHERE id = $1", tweetId)
+	tweet := Tweet{}
+	err2 := row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
+	if err2 != nil {
+		log.Fatal(err2)
+	}
+	b, err := json.Marshal(tweet)
+	w.Write(b)
 }
 
 func DeleteTweet(w http.ResponseWriter, req *http.Request) {
