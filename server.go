@@ -16,6 +16,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Tweet struct {
+    Id int
+    UserId int
+    Message string
+}
+
 func getDbConfig() (string, string) {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("dbconf")
@@ -44,12 +50,6 @@ func AllTweets(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 	defer rows.Close()
-
-	type Tweet struct {
-	    Id int
-	    UserId int
-	    Message string
-	}
 
 	tweetsSlice := []Tweet{}
 	for rows.Next() {
