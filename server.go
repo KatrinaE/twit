@@ -113,9 +113,11 @@ func DeleteTweet(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	io.WriteString(w, "DeleteTweet " + tweetId)
-	result, err := db.Exec("DELETE FROM tweets WHERE id = $1", tweetId)
+	result, err := db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
 	fmt.Println(result)
+	s := "Done"
+	b, err := json.Marshal(s)
+	w.Write(b)
 }
 
 func UserTweets(w http.ResponseWriter, req *http.Request) {
