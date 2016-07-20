@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 //    "html"
 	"encoding/json"
 	"io"
@@ -70,23 +71,35 @@ func AllTweets(w http.ResponseWriter, req *http.Request) {
 }
 
 func CreateTweet(w http.ResponseWriter, req *http.Request) {
-//	tweetId := twit.makeUUID()
-	tweetId := 1
-	userId := req.URL.Query().Get(":userId")
-	tweetText := req.URL.Query().Get(":tweetText")
-	//io.WriteString(w, "CreateTweet " + tweetId)
+	req.ParseForm()
+	userIdS := req.FormValue("UserId")
+	userId, err := strconv.Atoi(userIdS)
+	if err != nil {	log.Fatal(err) }
+	tweetMsg := req.FormValue("TweetMsg")
+
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		log.Fatal(err)
-	}
-	result, err := db.Exec(
-		"INSERT INTO tweets (id, user_id, text) VALUES ($1, $2, $3)",
-		tweetId,
+	if err != nil {	log.Fatal(err) }
+
+	row := db.QueryRow(
+		"INSERT INTO t_tweet (user_id, message) VALUES ($1, $2) RETURNING id",
 		userId,
-		tweetText,
-	)
-	fmt.Println(result)
+		tweetMsg)
+	if err != nil { log.Fatal(err) }
+
+	var id int
+	err2 := row.Scan(&id)
+	if err2 != nil { log.Fatal(err) }
+
+	_, err3 := db.Exec(
+		"INSERT INTO t_tweet_queue (tweet_id, status) VALUES ($1, 'ready')",
+		id);
+	if err3 != nil { log.Fatal(err3) }
+
+	tweet := Tweet{id, userId, tweetMsg}
+	b, err := json.Marshal(tweet)
+	if err != nil { log.Fatal(err) }
+	w.Write(b)
 }
 
 func GetTweet(w http.ResponseWriter, req *http.Request) {
