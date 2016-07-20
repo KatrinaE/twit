@@ -8,5 +8,5 @@ INSERT INTO t_user (id, username) VALUES (5, 'cy');
 
 
 -- +goose Down
-DELETE FROM t_user WHERE id IN('1', '2', '3', '4');
+DELETE FROM t_user WHERE id IN('1', '2', '3', '4', '5');
 
