@@ -51,31 +51,43 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	userIdS := req.FormValue("UserId")
 	userId, err := strconv.Atoi(userIdS)
-	if err != nil {	log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	tweetMsg := req.FormValue("TweetMsg")
 
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {	log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	row := db.QueryRow(
 		"INSERT INTO t_tweet (user_id, message) VALUES ($1, $2) RETURNING id",
 		userId,
 		tweetMsg)
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var id int
 	err2 := row.Scan(&id)
-	if err2 != nil { log.Fatal(err) }
+	if err2 != nil {
+		log.Fatal(err)
+	}
 
 	_, err3 := db.Exec(
 		"INSERT INTO t_tweet_queue (tweet_id, status) VALUES ($1, 'ready')",
-		id);
-	if err3 != nil { log.Fatal(err3) }
+		id)
+	if err3 != nil {
+		log.Fatal(err3)
+	}
 
 	tweet := Tweet{id, userId, tweetMsg}
 	b, err := json.Marshal(tweet)
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	w.Write(b)
 }
 
@@ -112,7 +124,7 @@ func DeleteTweet(w http.ResponseWriter, req *http.Request) {
 
 func UserTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
-	io.WriteString(w, "UserTweets " + userId)
+	io.WriteString(w, "UserTweets "+userId)
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
@@ -122,23 +134,23 @@ func UserTweets(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-/*	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+	/*	for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%s is bar\n", id)
+		}
+		if err := rows.Err(); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%s is bar\n", id)
-	}
-	if err := rows.Err(); err != nil {
-		log.Fatal(err)
-	}
-*/
+	*/
 	fmt.Println(rows)
 }
 
 func FollowedTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
-	io.WriteString(w, "UserFollowingTweets " + userId)
+	io.WriteString(w, "UserFollowingTweets "+userId)
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	// will have to use redis for this
@@ -146,21 +158,20 @@ func FollowedTweets(w http.ResponseWriter, req *http.Request) {
 	fmt.Println(err)
 }
 
-
 func main() {
-    m := pat.New()
-    m.Get("/tweets", http.HandlerFunc(AllTweets))
-    m.Post("/tweets", http.HandlerFunc(CreateTweet))
-    m.Get("/tweets/:tweetId", http.HandlerFunc(GetTweet))
-    m.Del("/tweets/:tweetId", http.HandlerFunc(DeleteTweet))
-    m.Get("/tweets/user/:userId", http.HandlerFunc(UserTweets))
-    m.Get("/tweets/followed/:userId", http.HandlerFunc(FollowedTweets))
+	m := pat.New()
+	m.Get("/tweets", http.HandlerFunc(AllTweets))
+	m.Post("/tweets", http.HandlerFunc(CreateTweet))
+	m.Get("/tweets/:tweetId", http.HandlerFunc(GetTweet))
+	m.Del("/tweets/:tweetId", http.HandlerFunc(DeleteTweet))
+	m.Get("/tweets/user/:userId", http.HandlerFunc(UserTweets))
+	m.Get("/tweets/followed/:userId", http.HandlerFunc(FollowedTweets))
 
-    // Register this pat with the default serve mux so that other packages
-    // may also be exported. (i.e. /debug/pprof/*)
-    http.Handle("/", m)
-    err := http.ListenAndServe(":12345", nil)
-    if err != nil {
-        log.Fatal("ListenAndServe: ", err)
-    }
+	// Register this pat with the default serve mux so that other packages
+	// may also be exported. (i.e. /debug/pprof/*)
+	http.Handle("/", m)
+	err := http.ListenAndServe(":12345", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
