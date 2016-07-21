@@ -1,44 +1,21 @@
 // http://thenewstack.io/make-a-restful-json-api-go/
 // https://github.com/golang/go/wiki/SQLInterface
+// hi
 package main
 
 import (
 	"fmt"
 	"strconv"
-//    "html"
+	//    "html"
+	"database/sql"
 	"encoding/json"
+	"github.com/bmizerany/pat"
+	_ "github.com/lib/pq"
 	"io"
+	"local/twit/twitutil"
 	"log"
 	"net/http"
-	"database/sql"
-	_ "github.com/lib/pq"
-	"github.com/bmizerany/pat"
-//	"local/twit/twitutil"
-	"github.com/spf13/viper"
 )
-
-type Tweet struct {
-    Id int
-    UserId int
-    Message string
-}
-
-func getDbConfig() (string, string) {
-	viper.SetConfigType("yaml")
-	viper.SetConfigName("dbconf")
-	viper.AddConfigPath("./db/")   // right now dbconf is only config
-	err := viper.ReadInConfig()
-	if err != nil {
-	    panic(fmt.Errorf("Fatal error config file: %s \n", err))
-	}
-
-	env := viper.GetString("environment")
-	dbDriverField := fmt.Sprintf("%s.driver", env)
-	dbDriver := viper.GetString(dbDriverField)
-	openField := fmt.Sprintf("%s.open", env)
-	dbOpen := viper.GetString(openField)
-	return dbDriver, dbOpen
-}
 
 func AllTweets(w http.ResponseWriter, req *http.Request) {
 	dbDriver, dbOpen := getDbConfig()
