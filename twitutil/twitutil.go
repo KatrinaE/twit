@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func getDbConfig() (string, string) {
+func GetDbConfig() (string, string) {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("dbconf")
 	viper.AddConfigPath("./db/") // right now dbconf is only config

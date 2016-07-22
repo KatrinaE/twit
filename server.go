@@ -18,7 +18,7 @@ import (
 )
 
 func AllTweets(w http.ResponseWriter, req *http.Request) {
-	dbDriver, dbOpen := getDbConfig()
+	dbDriver, dbOpen := twitutil.GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -56,7 +56,7 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 	}
 	tweetMsg := req.FormValue("TweetMsg")
 
-	dbDriver, dbOpen := getDbConfig()
+	dbDriver, dbOpen := twitutil.GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -93,7 +93,7 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 
 func GetTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
-	dbDriver, dbOpen := getDbConfig()
+	dbDriver, dbOpen := twitutil.GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -110,7 +110,7 @@ func GetTweet(w http.ResponseWriter, req *http.Request) {
 
 func DeleteTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
-	dbDriver, dbOpen := getDbConfig()
+	dbDriver, dbOpen := twitutil.GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -125,7 +125,7 @@ func DeleteTweet(w http.ResponseWriter, req *http.Request) {
 func UserTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	io.WriteString(w, "UserTweets "+userId)
-	dbDriver, dbOpen := getDbConfig()
+	dbDriver, dbOpen := twitutil.GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -151,7 +151,7 @@ func UserTweets(w http.ResponseWriter, req *http.Request) {
 func FollowedTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	io.WriteString(w, "UserFollowingTweets "+userId)
-	dbDriver, dbOpen := getDbConfig()
+	dbDriver, dbOpen := twitutil.GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	// will have to use redis for this
 	fmt.Println(db)
