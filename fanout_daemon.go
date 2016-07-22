@@ -13,7 +13,6 @@ import (
 	"gopkg.in/redis.v4"
 	pb "local/twit/protobuf"
 	st "local/twit/struct"
-	"local/twit/twitutil"
 	"log"
 	"strconv"
 )
@@ -76,7 +75,7 @@ func getHomeTimelineFromRedis(recipientId int) []pb.TweetLite {
 }
 
 func qryFollowerIds(tweet st.Tweet) []int {
-	dbDriver, dbOpen := twitutil.GetDbConfig()
+	dbDriver, dbOpen := GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -112,7 +111,7 @@ func fanout(tweet st.Tweet) {
 }
 
 func getNextTweetId() int {
-	dbDriver, dbOpen := twitutil.GetDbConfig()
+	dbDriver, dbOpen := GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
@@ -144,7 +143,7 @@ func main() {
 		// what to do if tweetid is null??
 
 		// warning: reusing logic from GetTweet()
-		dbDriver, dbOpen := twitutil.GetDbConfig()
+		dbDriver, dbOpen := GetDbConfig()
 		db, err := sql.Open(dbDriver, dbOpen)
 		if err != nil {
 			log.Fatal(err)
