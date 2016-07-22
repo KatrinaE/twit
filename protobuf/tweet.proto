@@ -1,0 +1,15 @@
+syntax = "proto2";
+package twit;
+
+// compile with:
+// $SRC_DIR = go package top-level directory
+// $DEST_DIR = go package top-level directory
+// protoc -I=$SRC_DIR --go_out=$DST_DIR $SRC_DIR/protobuf/tweet.proto
+
+// see documentation at:
+// https://developers.google.com/protocol-buffers/docs/gotutorial
+
+message TweetLite {
+    required int32 Id = 1;
+    required int32 UserId = 2;
+}
