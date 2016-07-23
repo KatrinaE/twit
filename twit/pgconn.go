@@ -5,28 +5,27 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
+	"strings"
 )
 
-func dbInsertTweet(userId int, tweetMsg string) {
+func dbInsertTweet(userId int, tweetMsg string) Tweet {
 	dbDriver, dbOpen := GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
-	row, err := db.QueryRow(
-		"INSERT INTO t_tweet (user_id, message) VALUES ($1, $2) RETURNING id, user_id, message",
-		userId,
-		tweetMsg)
+	sql := "INSERT INTO t_tweet (user_id, message) " +
+		"VALUES ($1, $2) RETURNING id, user_id, message"
+	row, err := db.Query(sql, userId, tweetMsg) // use query b/c no lastInsertId
 	if err != nil {
 		log.Fatal(err)
 	}
 	tweet := Tweet{}
-	err2 := row.Scan(&tweet.Id, &tweet.UserId, &tweet.Msg)
-	if err2 != nil {
+	err = row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
+	if err != nil {
 		log.Fatal(err)
 	}
 	return tweet
-
 }
 
 func dbGetTweet(tweetId int) Tweet {
@@ -35,30 +34,33 @@ func dbGetTweet(tweetId int) Tweet {
 	if err != nil {
 		log.Fatal(err)
 	}
-	row := db.QueryRow("SELECT id, user_id, message FROM t_tweet WHERE id = $1", tweetId)
+	query := "SELECT id, user_id, message FROM t_tweet WHERE id = $1"
+	row := db.QueryRow(query, tweetId)
 	tweet := Tweet{}
-	err := row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
+	err = row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return tweet
 }
 
-func dbQryTweets(query string) []Tweet {
+func dbQryTweets(whereClause string) []Tweet {
 	dbDriver, dbOpen := GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
-	rows, err := db.Query(q, userId)
+	sA := []string{"SELECT id, user_id, text FROM tweets", whereClause}
+	query := strings.Join(sA, " ")
+	rows, err := db.Query(query)
 	if err != nil {
 		log.Fatal(err)
 	}
 	tweetA := []Tweet{}
 	for rows.Next() {
 		var tweet Tweet
-		// warning: this assumes they did a select *
-		if err := rows.Scan(&tweet.Id, &tweet.UserId, &tweet.Msg); err != nil {
+		err := rows.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
+		if err != nil {
 			log.Fatal(err)
 		}
 		tweetA = append(tweetA, tweet)
@@ -70,20 +72,14 @@ func dbQryTweets(query string) []Tweet {
 }
 
 func dbQryAllTweets() []Tweet {
-	io.WriteString(w, "AllTweets ")
-	// q := "SELECT id, user_id, text FROM tweets WHERE user_id = $1"
-	// how to do it with native sql like above???
-	q := fmt.Sprintf("SELECT id, user_id, text FROM tweets")
-	tweetA := dbQryTweets(q)
+	whereClause := ""
+	tweetA := dbQryTweets(whereClause)
 	return tweetA
 }
 
 func dbQryUserTweets(userId int) []Tweet {
-	io.WriteString(w, "UserTweets "+userId)
-	// q := "SELECT id, user_id, text FROM tweets WHERE user_id = $1"
-	// how to do it with native sql like above???
-	q := fmt.Sprintf("SELECT id, user_id, text FROM tweets WHERE user_id = %d")
-	tweetA := dbQryTweets(q)
+	whereClause := fmt.Sprintf("WHERE user_id = %d", userId)
+	tweetA := dbQryTweets(whereClause)
 	return tweetA
 }
 
@@ -93,40 +89,62 @@ func dbDelTweet(tweetId int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	result, err := db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
-	return "Done"
+	_, err = db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
 }
 
 func dbEnqueueTweetId(tweetId int) {
 	dbDriver, dbOpen := GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
-	_, err := db.Exec(
-		"INSERT INTO t_tweet_queue (tweet_id, status) VALUES ($1, 'ready')",
-		tweetId)
+	sql := "INSERT INTO t_tweet_queue (tweet_id, status) " +
+		"VALUES ($1, 'ready')"
+	_, err = db.Exec(sql, tweetId)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func dbDequeueNextTweetId() int {
+func dbGetNextQueuedTweetId() int {
 	dbDriver, dbOpen := GetDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
 		log.Fatal(err)
 	}
-	row, err := db.QueryRow("SELECT tweet_id FROM t_tweet_queue WHERE status='ready' ORDER BY ctime ASC LIMIT 1")
+	query := "SELECT tweet_id FROM t_tweet_queue WHERE status='ready' " +
+		"ORDER BY ctime ASC LIMIT 1"
+	row := db.QueryRow(query)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// need to update. can you update with limit??
-
 	var tweetId int
-	err := row.Scan(&tweetId)
+	err = row.Scan(&tweetId)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return tweetId
+}
+
+func dbMarkTweetProcessing(tweetId int) {
+	dbDriver, dbOpen := GetDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	sql := "UPDATE t_tweet_queue SET status='processing' " +
+		"WHERE tweet_id=$1"
+	_, err = db.Exec(sql, tweetId)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func dbDequeueTweetId(tweetId int) {
+	dbDriver, dbOpen := GetDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sql := "DELETE from t_tweet_queue WHERE tweet_id=$1"
+	_, err = db.Exec(sql, tweetId)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func dbQryFollows(userId int) []Follow {
@@ -135,8 +153,8 @@ func dbQryFollows(userId int) []Follow {
 	if err != nil {
 		log.Fatal(err)
 	}
-	query := fmt.Sprintf("SELECT id FROM t_follower WHERE followed_id=%d", userId)
-	rows, err := db.Query(query)
+	query := "SELECT id FROM t_follower WHERE followed_id=$1"
+	rows, err := db.Query(query, userId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,8 +167,7 @@ func dbQryFollows(userId int) []Follow {
 		if err != nil {
 			log.Fatal(err)
 		}
-		followeA = append(followA, follow)
+		followA = append(followA, follow)
 	}
-
 	return followA
 }

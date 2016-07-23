@@ -1,7 +1,7 @@
 package twit
 
 func fanout(tweet Tweet) {
-	followerA := dbQryFollows(tweet)
+	followerA := dbQryFollows(tweet.UserId)
 	for _, follower := range followerA {
 		redisInsTweet(follower.Id, tweet)
 	}
@@ -9,9 +9,11 @@ func fanout(tweet Tweet) {
 
 func FanoutLoop() {
 	for {
-		tweetId := dbDequeueNextTweetId()
+		tweetId := dbGetNextQueuedTweetId()
 		// what to do if tweetid is null??
+		dbMarkTweetProcessing(tweetId)
 		tweet := dbGetTweet(tweetId)
 		fanout(tweet)
+		dbDequeueTweetId(tweetId)
 	}
 }

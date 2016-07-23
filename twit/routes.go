@@ -7,13 +7,17 @@ import (
 	"strconv"
 )
 
-func AllTweets(w http.ResponseWriter, req *http.Request) {
-	userId := req.URL.Query().Get(":userId")
+func allTweets(w http.ResponseWriter, req *http.Request) {
+	userIdS := req.URL.Query().Get(":userId")
+	userId, err := strconv.Atoi(userIdS)
+	if err != nil {
+		log.Fatal(err)
+	}
 	tweetA := dbQryUserTweets(userId)
 	writeJsonResponse(w, tweetA)
 }
 
-func CreateTweet(w http.ResponseWriter, req *http.Request) {
+func createTweet(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	userIdS := req.FormValue("UserId")
 	userId, err := strconv.Atoi(userIdS)
@@ -22,41 +26,64 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 	}
 	tweetMsg := req.FormValue("TweetMsg")
 	tweet := dbInsertTweet(userId, tweetMsg)
-	dbEnqueueTweet(tweet)
+	dbEnqueueTweetId(tweet.Id)
+	w.WriteHeader(http.StatusCreated)
 	writeJsonResponse(w, tweet)
 }
 
-func GetTweet(w http.ResponseWriter, req *http.Request) {
-	tweetId := req.URL.Query().Get(":tweetId")
+func getTweet(w http.ResponseWriter, req *http.Request) {
+	tweetIdS := req.URL.Query().Get(":tweetId")
+	tweetId, err := strconv.Atoi(tweetIdS)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	tweet := dbGetTweet(tweetId)
 	writeJsonResponse(w, tweet)
 }
 
-func DeleteTweet(w http.ResponseWriter, req *http.Request) {
-	tweetId := req.URL.Query().Get(":tweetId")
-	s := dbDelTweet(tweetId)
-	writeJsonResponse(w, tweet)
+func deleteTweet(w http.ResponseWriter, req *http.Request) {
+	tweetIdS := req.URL.Query().Get(":tweetId")
+	tweetId, err := strconv.Atoi(tweetIdS)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbDelTweet(tweetId)
+	response := map[string]string{"status": "ok"}
+	writeJsonResponse(w, response)
 }
 
-func UserTweets(w http.ResponseWriter, req *http.Request) {
-	userId := req.URL.Query().Get(":userId")
+func userTweets(w http.ResponseWriter, req *http.Request) {
+	userIdS := req.URL.Query().Get(":userId")
+	userId, err := strconv.Atoi(userIdS)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	tweetA := dbQryUserTweets(userId)
 	writeJsonResponse(w, tweetA)
 }
 
-func FollowedTweets(w http.ResponseWriter, req *http.Request) {
-	userId := req.URL.Query().Get(":userId")
-	tweetLites := getHomeTimelineFromRedis(userId)
+func followedTweets(w http.ResponseWriter, req *http.Request) {
+	userIdS := req.URL.Query().Get(":userId")
+	userId, err := strconv.Atoi(userIdS)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tweetLites := redisGetHomeTimeline(userId)
+	writeJsonResponse(w, tweetLites)
 	// will have to hydrate tweets
 }
 
-func RegisterRoutes() *PatternServeMux {
+func RegisterRoutes() *pat.PatternServeMux {
 	mux := pat.New()
-	mux.Get("/tweets", http.HandlerFunc(AllTweets))
-	mux.Post("/tweets", http.HandlerFunc(CreateTweet))
-	mux.Get("/tweets/:tweetId", http.HandlerFunc(GetTweet))
-	mux.Del("/tweets/:tweetId", http.HandlerFunc(DeleteTweet))
-	mux.Get("/tweets/user/:userId", http.HandlerFunc(UserTweets))
-	mux.Get("/tweets/followed/:userId", http.HandlerFunc(FollowedTweets))
+	mux.Get("/tweets", http.HandlerFunc(allTweets))
+	mux.Post("/tweets", http.HandlerFunc(createTweet))
+	mux.Get("/tweets/:tweetId", http.HandlerFunc(getTweet))
+	mux.Del("/tweets/:tweetId", http.HandlerFunc(deleteTweet))
+	mux.Get("/tweets/user/:userId", http.HandlerFunc(userTweets))
+	mux.Get("/tweets/followed/:userId", http.HandlerFunc(followedTweets))
 	return mux
 }

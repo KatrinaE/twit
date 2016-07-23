@@ -1,0 +1,10 @@
+syntax = "proto2";
+package twit;
+
+// compile with:
+// protoc --go_out=. tweetlite.proto
+
+message TweetLite {
+	required int32 Id = 1;
+	required int32 UserId = 2;
+}

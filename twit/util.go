@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
+	"log"
+	"net/http"
 )
 
 func writeJsonResponse(w http.ResponseWriter, val interface{}) {

@@ -1,13 +1,14 @@
 package twit
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"gopkg.in/redis.v4"
-	pb "local/twit/protobuf"
+	"log"
 	"strconv"
 )
 
-func newRedisClient() redisclient {
+func newRedisClient() *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
@@ -19,12 +20,11 @@ func newRedisClient() redisclient {
 }
 
 func redisInsTweet(recipientId int, tweet Tweet) {
-	// is there a better way to do this? i.e. like a tweet without a message?
-	tweetLite := &pb.TweetLite{
+	tweetLite := &TweetLite{
 		Id:     proto.Int(tweet.Id),
 		UserId: proto.Int(tweet.UserId),
 	}
-	pbTweetLite, err := proto.Marshal(tweetLite)
+	tweetLitePb, err := proto.Marshal(tweetLite)
 	if err != nil {
 		log.Fatalln("Failed to encode tweet:", err)
 
@@ -34,13 +34,13 @@ func redisInsTweet(recipientId int, tweet Tweet) {
 
 	client := newRedisClient()
 	recipientIdStr := strconv.Itoa(recipientId)
-	err1 := client.LPush(recipientIdStr, pbTweetLite).Err()
+	err1 := client.LPush(recipientIdStr, tweetLitePb).Err()
 	if err1 != nil {
 		panic(err1)
 	}
 }
 
-func getHomeTimelineFromRedis(recipientId int) []pb.TweetLite {
+func redisGetHomeTimeline(recipientId int) []TweetLite {
 	recipientIdStr := strconv.Itoa(recipientId)
 	client := newRedisClient()
 	result, err := client.LRange(recipientIdStr, 0, -1).Result()
@@ -48,9 +48,9 @@ func getHomeTimelineFromRedis(recipientId int) []pb.TweetLite {
 		panic(err)
 	}
 
-	tweetLites := []pb.TweetLite{}
+	tweetLites := []TweetLite{}
 	for _, s := range result {
-		tweetLite := &pb.TweetLite{}
+		tweetLite := &TweetLite{}
 		b := []byte(s)
 		err := proto.Unmarshal(b, tweetLite)
 		if err != nil {
