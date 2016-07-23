@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-func writeJson (??, ??) {
-	b, err := json.Marshal(tweet)
+func writeJsonResponse(w http.ResponseWriter, val interface{}) {
+	b, err := json.Marshal(val)
 	if err != nil {
 		log.Fatal(err)
 	}

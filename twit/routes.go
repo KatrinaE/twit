@@ -10,7 +10,7 @@ import (
 func AllTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	tweetA := dbQryUserTweets(userId)
-	writeJson(w, tweetA)
+	writeJsonResponse(w, tweetA)
 }
 
 func CreateTweet(w http.ResponseWriter, req *http.Request) {
@@ -23,25 +23,25 @@ func CreateTweet(w http.ResponseWriter, req *http.Request) {
 	tweetMsg := req.FormValue("TweetMsg")
 	tweet := dbInsertTweet(userId, tweetMsg)
 	dbEnqueueTweet(tweet)
-	writeJson(w, tweet)
+	writeJsonResponse(w, tweet)
 }
 
 func GetTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
 	tweet := dbGetTweet(tweetId)
-	writeJson(w, tweet)
+	writeJsonResponse(w, tweet)
 }
 
 func DeleteTweet(w http.ResponseWriter, req *http.Request) {
 	tweetId := req.URL.Query().Get(":tweetId")
 	s := dbDelTweet(tweetId)
-	writeJson(w, tweet)
+	writeJsonResponse(w, tweet)
 }
 
 func UserTweets(w http.ResponseWriter, req *http.Request) {
 	userId := req.URL.Query().Get(":userId")
 	tweetA := dbQryUserTweets(userId)
-	writeJson(w, tweetA)
+	writeJsonResponse(w, tweetA)
 }
 
 func FollowedTweets(w http.ResponseWriter, req *http.Request) {
