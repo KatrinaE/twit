@@ -4,16 +4,17 @@
 package main
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
+	"local/twit/internal/twit"
 	"log"
 	"net/http"
-	"twit"
 )
 
 func main() {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath("../../")
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -21,7 +22,7 @@ func main() {
 
 	mux := twit.RegisterRoutes()
 	http.Handle("/", mux)
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
