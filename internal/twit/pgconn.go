@@ -114,55 +114,64 @@ func dbEnqueueTweetId(tweetId int) {
 }
 
 func dbGetNextQueuedTweetId() (int, error) {
+	var tweetId int
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
-		log.Fatal(err)
+		return tweetId, err
 	}
 	query := "SELECT tweet_id FROM t_tweet_queue WHERE status='ready' " +
 		"ORDER BY ctime ASC LIMIT 1"
-	var tweetId int
 	err = db.QueryRow(query).Scan(&tweetId)
 	db.Close()
 	return tweetId, err
 }
 
-func dbMarkTweetProcessing(tweetId int) {
+func dbMarkTweetProcessing(tweetId int) error {
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		return err
+	}
 	sql := "UPDATE t_tweet_queue SET status='processing' " +
 		"WHERE tweet_id=$1"
 	_, err = db.Exec(sql, tweetId)
 	db.Close()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return err
 }
 
-func dbMarkTweetErrored(tweetId int) {
+func dbMarkTweetErrored(tweetId int) error {
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		return err
+	}
 	sql := "UPDATE t_tweet_queue SET status='error' " +
 		"WHERE tweet_id=$1"
 	_, err = db.Exec(sql, tweetId)
 	db.Close()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return err
 }
 
-func dbDequeueTweetId(tweetId int) {
+func dbDequeueTweetId(tweetId int) error {
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	sql := "DELETE from t_tweet_queue WHERE tweet_id=$1"
 	_, err = db.Exec(sql, tweetId)
 	db.Close()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return err
 }
 
 func dbQryUserFollowers(userId int) ([]Follow, error) {
