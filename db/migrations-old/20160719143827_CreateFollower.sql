@@ -2,8 +2,8 @@
 -- +goose Up
 CREATE TABLE t_follower (
 id		SERIAL PRIMARY KEY,
-follower_id	INTEGER REFERENCES t_user(id),
-followed_id	INTEGER REFERENCES t_user(id),
+follower_id	INTEGER REFERENCES t_user(id) ON DELETE CASCADE,
+followed_id	INTEGER REFERENCES t_user(id) ON DELETE CASCADE,
 ctime		TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
 mtime		TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
