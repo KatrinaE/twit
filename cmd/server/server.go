@@ -4,17 +4,29 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/spf13/viper"
 	"local/twit/internal/twit"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func main() {
+	var configPath string
+	var configFilename string
+	var port int
+	flag.StringVar(&configPath, "configpath", ".",
+		"path to configuration file (absolute or relative)")
+	flag.StringVar(&configFilename, "configfile", "config",
+		"name of config file (no extension")
+	flag.IntVar(&port, "port", 8080, "port for server to listen on")
+	flag.Parse()
+
 	viper.SetConfigType("yaml")
-	viper.SetConfigName("config")
-	viper.AddConfigPath("../../")
+	viper.SetConfigName(configFilename)
+	viper.AddConfigPath(configPath)
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -22,9 +34,9 @@ func main() {
 
 	mux := twit.RegisterRoutes()
 	http.Handle("/", mux)
-	err = http.ListenAndServe(":8080", nil)
+	portStr := strconv.Itoa(port)
+	err = http.ListenAndServe(":"+portStr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-
 }
