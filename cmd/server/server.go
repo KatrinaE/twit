@@ -14,6 +14,8 @@ import (
 )
 
 func main() {
+	log.Print("Starting up...")
+	log.Print("Parsing flags")
 	var configPath string
 	var configFilename string
 	var port int
@@ -24,6 +26,7 @@ func main() {
 	flag.IntVar(&port, "port", 8080, "port for server to listen on")
 	flag.Parse()
 
+	log.Print("Setting config")
 	viper.SetConfigType("yaml")
 	viper.SetConfigName(configFilename)
 	viper.AddConfigPath(configPath)
@@ -32,11 +35,14 @@ func main() {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 
+	log.Print("Registering routes")
 	mux := twit.RegisterRoutes()
 	http.Handle("/", mux)
 	portStr := strconv.Itoa(port)
+	log.Print("Starting HTTP listener on port " + portStr)
 	err = http.ListenAndServe(":"+portStr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+	log.Print("Listening on port " + portStr)
 }
