@@ -13,7 +13,11 @@ func allTweets(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tweetA := dbQryUserTweets(userId)
+	tweetA, err := dbQryUserTweets(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	writeJsonResponse(w, tweetA)
 }
 
@@ -25,7 +29,11 @@ func createTweet(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 	tweetMsg := req.FormValue("TweetMsg")
-	tweet := dbInsertTweet(userId, tweetMsg)
+	tweet, err := dbInsertTweet(userId, tweetMsg)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	dbEnqueueTweetId(tweet.Id)
 	w.WriteHeader(http.StatusCreated)
 	writeJsonResponse(w, tweet)
@@ -38,7 +46,11 @@ func getTweet(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 
-	tweet := dbGetTweet(tweetId)
+	tweet, err := dbGetTweet(tweetId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	writeJsonResponse(w, tweet)
 }
 
@@ -61,7 +73,11 @@ func userTweets(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 
-	tweetA := dbQryUserTweets(userId)
+	tweetA, err := dbQryUserTweets(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	writeJsonResponse(w, tweetA)
 }
 

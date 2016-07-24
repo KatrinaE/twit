@@ -9,35 +9,35 @@ import (
 )
 
 func newRedisClient() *redis.Client {
+	address, password, db := getRedisConfig()
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     address,
+		Password: password,
+		DB:       db,
 	})
-	// need to check client err???
-
 	return client
 }
 
-func redisInsTweet(recipientId int, tweet Tweet) {
+func redisInsertTweet(recipientId int, tweet Tweet) error {
+	// Use lightweight version of Tweet (no message) in Redis
 	tweetLite := &TweetLite{
 		Id:     proto.Int(tweet.Id),
 		UserId: proto.Int(tweet.UserId),
 	}
 	tweetLitePb, err := proto.Marshal(tweetLite)
 	if err != nil {
-		log.Fatalln("Failed to encode tweet:", err)
-
+		return err
 	}
 	fmt.Println("sending to recipient ", recipientId)
 	fmt.Println(tweetLite)
 
 	client := newRedisClient()
 	recipientIdStr := strconv.Itoa(recipientId)
-	err1 := client.LPush(recipientIdStr, tweetLitePb).Err()
-	if err1 != nil {
-		panic(err1)
+	err = client.LPush(recipientIdStr, tweetLitePb).Err()
+	if err != nil {
+		return err
 	}
+	return err
 }
 
 func redisGetHomeTimeline(recipientId int) []TweetLite {
