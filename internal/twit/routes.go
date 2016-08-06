@@ -10,7 +10,7 @@ import (
 func allTweets(w http.ResponseWriter, req *http.Request) {
 	tweetA, err := dbQryAllTweets()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		writeErrorResponse(w, err)
 		return
 	}
 	writeJsonResponse(w, tweetA)
@@ -21,12 +21,13 @@ func createTweet(w http.ResponseWriter, req *http.Request) {
 	userIdS := req.FormValue("UserId")
 	userId, err := strconv.Atoi(userIdS)
 	if err != nil {
-		log.Fatal(err)
+		writeErrorResponse(w, err)
+		return
 	}
 	tweetMsg := req.FormValue("TweetMsg")
 	tweet, err := dbInsertTweet(userId, tweetMsg)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		writeErrorResponse(w, err)
 		return
 	}
 	dbEnqueueTweetId(tweet.Id)
@@ -38,12 +39,13 @@ func getTweet(w http.ResponseWriter, req *http.Request) {
 	tweetIdS := req.URL.Query().Get(":tweetId")
 	tweetId, err := strconv.Atoi(tweetIdS)
 	if err != nil {
-		log.Fatal(err)
+		writeErrorResponse(w, err)
+		return
 	}
 
 	tweet, err := dbGetTweet(tweetId)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		writeErrorResponse(w, err)
 		return
 	}
 	writeJsonResponse(w, tweet)
@@ -53,7 +55,8 @@ func deleteTweet(w http.ResponseWriter, req *http.Request) {
 	tweetIdS := req.URL.Query().Get(":tweetId")
 	tweetId, err := strconv.Atoi(tweetIdS)
 	if err != nil {
-		log.Fatal(err)
+		writeErrorResponse(w, err)
+		return
 	}
 
 	dbDelTweet(tweetId)
@@ -65,12 +68,13 @@ func userTweets(w http.ResponseWriter, req *http.Request) {
 	userIdS := req.URL.Query().Get(":userId")
 	userId, err := strconv.Atoi(userIdS)
 	if err != nil {
-		log.Fatal(err)
+		writeErrorResponse(w, err)
+		return
 	}
 
 	tweetA, err := dbQryUserTweets(userId)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		writeErrorResponse(w, err)
 		return
 	}
 	writeJsonResponse(w, tweetA)
@@ -80,10 +84,15 @@ func followedTweets(w http.ResponseWriter, req *http.Request) {
 	userIdS := req.URL.Query().Get(":userId")
 	userId, err := strconv.Atoi(userIdS)
 	if err != nil {
-		log.Fatal(err)
+		writeErrorResponse(w, err)
+		return
 	}
 
-	tweetLites := redisGetHomeTimeline(userId)
+	tweetLites, err := redisGetHomeTimeline(userId)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
 	writeJsonResponse(w, tweetLites)
 	// will have to hydrate tweets
 }
