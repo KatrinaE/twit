@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"log"
 	"strings"
 )
 
@@ -27,14 +26,14 @@ func dbInsertTweet(userId int, tweetMsg string) (Tweet, error) {
 }
 
 func dbGetTweet(tweetId int) (Tweet, error) {
+	tweet := Tweet{}
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	if err != nil {
-		log.Fatal(err)
+		return tweet, err
 	}
 	query := "SELECT id, user_id, message FROM t_tweet WHERE id = $1"
 	row := db.QueryRow(query, tweetId)
-	tweet := Tweet{}
 	err = row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
 	db.Close()
 	if err != nil {
@@ -101,7 +100,7 @@ func dbDelTweet(tweetId int) error {
 	return err
 }
 
-func dbEnqueueTweetId(tweetId int) {
+func dbEnqueueTweetId(tweetId int) error {
 	dbDriver, dbOpen := getDbConfig()
 	db, err := sql.Open(dbDriver, dbOpen)
 	sql := "INSERT INTO t_tweet_queue (tweet_id, status) " +
@@ -109,8 +108,9 @@ func dbEnqueueTweetId(tweetId int) {
 	_, err = db.Exec(sql, tweetId)
 	db.Close()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return err
 }
 
 func dbGetNextQueuedTweetId() (int, error) {
