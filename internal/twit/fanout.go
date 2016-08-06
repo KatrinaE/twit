@@ -18,14 +18,14 @@ func fanout(tweet Tweet) {
 	for _, follower := range followerA {
 		err := redisInsertTweet(follower.Id, tweet)
 		if err != nil {
-			m := "Could not insert tweet "
-			m += fmt.Sprintf("%+v into %d's ", tweet, follower.Id)
-			m += fmt.Sprintf("home timeline. Err: %+v", err)
+			m := fmt.Sprintf("Could not insert tweet %d ", tweet.Id)
+			m += fmt.Sprintf("for user %d", follower.Id)
+			m += fmt.Sprintf("Err: %+v", err)
 			log.Print(m)
 			return
 		}
-		m := fmt.Sprintf("Inserted tweet %+v into ", tweet)
-		m += fmt.Sprintf("user %d's home timeline", follower.Id)
+		m := fmt.Sprintf("Inserted tweet %d ", tweet.Id)
+		m += fmt.Sprintf("for user user %d", follower.Id)
 		log.Print(m)
 	}
 }
@@ -46,7 +46,7 @@ func FanoutLoop() {
 		tweet, err := dbGetTweet(tweetId)
 		if err != nil {
 			m := fmt.Sprintf("Could not get tweet %d, ", tweetId)
-			m += "even though it was queued. "
+			m += "although queued. "
 			m += fmt.Sprintf("Err: %+v", err)
 			log.Print(m)
 			dbMarkTweetErrored(tweetId)
