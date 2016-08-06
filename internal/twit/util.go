@@ -16,6 +16,7 @@ func writeErrorResponse(w http.ResponseWriter, err error) {
 }
 
 func writeJsonResponse(w http.ResponseWriter, val interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	b, err := json.Marshal(val)
 	if err != nil {
 		log.Fatal(err)
