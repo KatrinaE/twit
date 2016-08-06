@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 )
 
@@ -44,4 +45,14 @@ func getRedisConfig() (string, string, int) {
 		log.Fatalf("Non-integer value for db: %s", dbStr)
 	}
 	return address, password, db
+}
+
+// Debug prints a debug information to the log with file and line.
+// Thanks to this SO answer!
+// http://stackoverflow.com/questions/7052693/how-to-get-the-name-of-a-function-in-go
+func Debug(format string, a ...interface{}) {
+	_, file, line, _ := runtime.Caller(1)
+	info := fmt.Sprintf(format, a...)
+
+	log.Printf("[cgl] debug %s:%d %v", file, line, info)
 }
