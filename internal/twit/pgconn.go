@@ -7,15 +7,10 @@ import (
 	"strings"
 )
 
-func dbInsertTweet(userId int, tweetMsg string) (Tweet, error) {
-	tweet := Tweet{}
-	dbDriver, dbOpen := getDbConfig()
-	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		return tweet, err
-	}
+func dbInsertTweet(db *sql.DB, userId int, tweetMsg string) (Tweet, error) {
 	sql := "INSERT INTO t_tweet (user_id, message) " +
 		"VALUES ($1, $2) RETURNING id, user_id, message"
+	tweet := Tweet{}
 	err = db.QueryRow(sql, userId, tweetMsg).
 		Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
 	defer db.Close()
@@ -25,13 +20,8 @@ func dbInsertTweet(userId int, tweetMsg string) (Tweet, error) {
 	return tweet, err
 }
 
-func dbGetTweet(tweetId int) (Tweet, error) {
+func dbGetTweet(db *sql.DB, tweetId int) (Tweet, error) {
 	tweet := Tweet{}
-	dbDriver, dbOpen := getDbConfig()
-	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		return tweet, err
-	}
 	query := "SELECT id, user_id, message FROM t_tweet WHERE id = $1"
 	row := db.QueryRow(query, tweetId)
 	err = row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
@@ -42,13 +32,8 @@ func dbGetTweet(tweetId int) (Tweet, error) {
 	return tweet, err
 }
 
-func dbQryTweets(whereClause string) ([]Tweet, error) {
+func dbQryTweets(db *sql.DB, whereClause string) ([]Tweet, error) {
 	tweetA := []Tweet{}
-	dbDriver, dbOpen := getDbConfig()
-	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		return tweetA, err
-	}
 	sA := []string{"SELECT id, user_id, message FROM t_tweet", whereClause}
 	query := strings.Join(sA, " ")
 	rows, err := db.Query(query)
@@ -74,24 +59,19 @@ func dbQryTweets(whereClause string) ([]Tweet, error) {
 	return tweetA, err
 }
 
-func dbQryAllTweets() ([]Tweet, error) {
+func dbQryAllTweets(db *sql.DB) ([]Tweet, error) {
 	whereClause := ""
-	tweetA, err := dbQryTweets(whereClause)
+	tweetA, err := dbQryTweets(db, whereClause)
 	return tweetA, err
 }
 
-func dbQryUserTweets(userId int) ([]Tweet, error) {
+func dbQryUserTweets(db *sql.DB, userId int) ([]Tweet, error) {
 	whereClause := fmt.Sprintf("WHERE user_id = %d", userId)
-	tweetA, err := dbQryTweets(whereClause)
+	tweetA, err := dbQryTweets(db, whereClause)
 	return tweetA, err
 }
 
-func dbDelTweet(tweetId int) error {
-	dbDriver, dbOpen := getDbConfig()
-	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		return err
-	}
+func dbDelTweet(db *sql.DB, tweetId int) error {
 	_, err = db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
 	db.Close()
 	if err != nil {
@@ -174,13 +154,8 @@ func dbDequeueTweetId(tweetId int) error {
 	return err
 }
 
-func dbQryUserFollowers(userId int) ([]Follow, error) {
+func dbQryUserFollowers(db *sql.DB, userId int) ([]Follow, error) {
 	followA := []Follow{}
-	dbDriver, dbOpen := getDbConfig()
-	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		return followA, err
-	}
 	query := "SELECT id, follower_id, followed_id FROM t_follower WHERE followed_id=$1"
 	rows, err := db.Query(query, userId)
 	defer rows.Close()

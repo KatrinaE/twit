@@ -8,7 +8,13 @@ import (
 )
 
 func allTweets(w http.ResponseWriter, req *http.Request) {
-	tweetA, err := dbQryAllTweets()
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	tweetA, err := dbQryAllTweets(db)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return
@@ -24,8 +30,14 @@ func createTweet(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
 	tweetMsg := req.FormValue("TweetMsg")
-	tweet, err := dbInsertTweet(userId, tweetMsg)
+	tweet, err := dbInsertTweet(db, userId, tweetMsg)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return
@@ -42,8 +54,13 @@ func getTweet(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
-
-	tweet, err := dbGetTweet(tweetId)
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	tweet, err := dbGetTweet(db, tweetId)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return
@@ -59,7 +76,13 @@ func deleteTweet(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	dbDelTweet(tweetId)
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	dbDelTweet(db, tweetId)
 	response := map[string]string{"status": "ok"}
 	writeJsonResponse(w, response)
 }
@@ -72,7 +95,13 @@ func userTweets(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tweetA, err := dbQryUserTweets(userId)
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	tweetA, err := dbQryUserTweets(db, userId)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return
@@ -88,7 +117,13 @@ func followedTweets(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tweetLites, err := redisGetHomeTimeline(userId)
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	tweetLites, err := redisGetHomeTimeline(db, userId)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return
