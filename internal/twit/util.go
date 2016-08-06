@@ -9,6 +9,11 @@ import (
 	"strconv"
 )
 
+func writeErrorResponse(w http.ResponseWriter, err error) {
+	Debug(err.Error())
+	w.WriteHeader(http.StatusInternalServerError)
+}
+
 func writeJsonResponse(w http.ResponseWriter, val interface{}) {
 	b, err := json.Marshal(val)
 	if err != nil {
