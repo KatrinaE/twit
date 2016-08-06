@@ -40,23 +40,26 @@ func redisInsertTweet(recipientId int, tweet Tweet) error {
 	return err
 }
 
-func redisGetHomeTimeline(recipientId int) []TweetLite {
+func redisGetHomeTimeline(recipientId int) ([]TweetLite, error) {
 	recipientIdStr := strconv.Itoa(recipientId)
 	client := newRedisClient()
-	result, err := client.LRange(recipientIdStr, 0, -1).Result()
+	result, err := client.LRange(recipientIdStr, 0, 1).Result()
 	if err != nil {
 		panic(err)
 	}
 
 	tweetLites := []TweetLite{}
 	for _, s := range result {
+		log.Print(s)
 		tweetLite := &TweetLite{}
 		b := []byte(s)
 		err := proto.Unmarshal(b, tweetLite)
 		if err != nil {
-			log.Fatalln("Failed to decode tweet:", err)
+			log.Printf("Failed to decode tweet: %s Error: %+v",
+				s, err)
+			return tweetLites, err
 		}
 		tweetLites = append(tweetLites, *tweetLite)
 	}
-	return tweetLites
+	return tweetLites, err
 }
