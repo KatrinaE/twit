@@ -8,12 +8,7 @@ import (
 )
 
 func allTweets(w http.ResponseWriter, req *http.Request) {
-	userIdS := req.URL.Query().Get(":userId")
-	userId, err := strconv.Atoi(userIdS)
-	if err != nil {
-		log.Fatal(err)
-	}
-	tweetA, err := dbQryUserTweets(userId)
+	tweetA, err := dbQryAllTweets()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
