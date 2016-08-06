@@ -32,41 +32,18 @@ func fanout(tweet Tweet) {
 
 func FanoutLoop() {
 	for {
-		tweetId, err := dbGetNextQueuedTweetId()
-		switch {
-		case err == sql.ErrNoRows:
-			time.Sleep(3000 * time.Millisecond)
-			continue
-		case err != nil:
-			log.Printf("%+v", err)
-			// do not terminate execution -- maybe
-			// revisit this decision later
-			continue
-		}
+		tweetId := redisGetNextQueuedTweetId()
 		tweet, err := dbGetTweet(tweetId)
 		if err != nil {
 			m := fmt.Sprintf("Could not get tweet %d, ", tweetId)
 			m += "although queued. "
 			m += fmt.Sprintf("Err: %+v", err)
 			log.Print(m)
-			dbMarkTweetErrored(tweetId)
-			if err != nil {
-				m := "Could not mark tweet "
-				m += fmt.Sprintf("%d", tweetId)
-				m += " errored. Error: "
-				m += fmt.Sprintf("%+v", err)
-				log.Print(m)
-			}
-			continue
-		}
-		err = dbMarkTweetProcessing(tweetId)
-		if err != nil {
-			m := fmt.Sprintf("Could not mark tweet %d ", tweetId)
-			m += "processing. Aborting fanout."
-			log.Print(m)
+			// Just proceed with next tweet for now. In a
+			// real system, would want to log and follow up.
 			continue
 		}
 		fanout(tweet)
-		dbDequeueTweetId(tweetId)
+		redisDequeueTweetId(tweetId)
 	}
 }
