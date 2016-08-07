@@ -1,10 +1,12 @@
 package twit
 
 import (
+	"bytes"
 	"database/sql"
 	"github.com/bmizerany/pat" // muxer
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func allTweets(w http.ResponseWriter, req *http.Request) {
@@ -123,8 +125,26 @@ func homeTimelineTweets(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
-	writeJsonResponse(w, tweetLites)
-	// will have to hydrate tweets
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+
+	// Create WHERE clause to get full tweets for all tweet ids in timeline
+	var buffer bytes.Buffer
+	buffer.WriteString("WHERE t_tweet.id IN (")
+	for _, tweetLite := range tweetLites {
+		buffer.WriteString(strconv.Itoa(int(*tweetLite.Id)))
+		buffer.WriteString(",")
+	}
+	whereClause := buffer.String()
+	whereClause = strings.TrimRight(whereClause, ",")
+	whereClause += ")"
+
+	displayTweetA, err := dbQryDisplayTweets(db, whereClause)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJsonResponse(w, displayTweetA)
 }
 
 func RegisterRoutes() *pat.PatternServeMux {
