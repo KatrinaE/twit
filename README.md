@@ -171,25 +171,25 @@ functions are integration tested using a test Redis instance defined in `dbconf.
 
 ## File Glossary
 
-Commands
+Executables
 
-   * *cmd/fanoutworker/fanoutworker.go* - tweet delivery worker
-   * *cmd/server/server.go* - web API server
+   * *cmd/fanoutworker/main.go* - tweet delivery worker
+   * *cmd/server/main.go* - web API server
 
 Source Code
 
-   * *internal/fanout.go* - functions that deliver tweets to users' home timelines
-   * *internal/models.go* - structs mirroring Postgres database schema
-   * *internal/pgconn.go* - functions that construct and execute Postgres queries
-   * *internal/redisconn.go* - functions that construct and execute Redis queries
-   * *internal/tweetlite.proto*, *internal/tweetlite.pb.go* - tweet protocol buffer definition
-   * *internal/util.go* - utility functions, mostly related to retrieving configs
+   * *fanout.go* - functions that deliver tweets to users' home timelines
+   * *models.go* - structs mirroring Postgres database schema
+   * *pgconn.go* - functions that construct and execute Postgres queries
+   * *redisconn.go* - functions that construct and execute Redis queries
+   * *tweetlite.proto*, *tweetlite.pb.go* - tweet protocol buffer definition
+   * *util.go* - utility functions, mostly related to retrieving configs
      and writing responses.
 
 Tests
 
-   * *internal/pgconn_tests.go*
-   * *internal/redisconn_tests.go*
+   * *pgconn_tests.go*
+   * *redisconn_tests.go*
 
 Database Management
 
