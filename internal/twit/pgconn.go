@@ -11,6 +11,7 @@ func dbInsertTweet(db *sql.DB, userId int, tweetMsg string) (Tweet, error) {
 	sql := "INSERT INTO t_tweet (user_id, message) " +
 		"VALUES ($1, $2) RETURNING id, user_id, message"
 	tweet := Tweet{}
+	// Use Query instead of Exec b/c returning rows
 	err := db.QueryRow(sql, userId, tweetMsg).
 		Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
 	defer db.Close()
