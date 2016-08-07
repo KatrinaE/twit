@@ -6,24 +6,25 @@ backend, based on the architecture described in
 My motivation was to learn a few technologies that were new to me
 (Go, Redis, protocol buffers) and practice some skills that can
 always use honing (API design, web app architecture, testing).
-I enjoyed learning how Twitter solved
-the technical challenges associated with tweet delivery, because I
-had wrestled with similar issues while building a user notification
-system at work.
 
 Twit's only functionality is to create tweets and deliver them to
-the appropriate users (anytime a user tweets, that tweet is added to his or her
-followers' home timelines. A user's home timeline is a list of all the
-tweets of all the people that user follows). Twit does NOT allow you
+the appropriate users. Anytime a user tweets, that tweet is added to his or her
+followers' home timelines; a home timeline is a list of all the
+tweets of all the people that user follows. Twit does NOT allow you
 to create users, follow other users, or perform any other Twitter functions.
-Instead, a few users and follow relationships are added at startup.
-Twit also does not have a frontend, so the API is the only way to play with it.
-Like I said, this is a toy :-).
+A few users and follow relationships are added at startup to give you something
+to play with. Twit also does not have a frontend, so the API is the only way to
+interact with it. Like I said, this is a toy for learning, not a real system :-).
 
 
 ## Installation
 
 TODO
+
+Topics:
+
+   * data store configuration
+   * test data import
 
 ## API
 
@@ -32,32 +33,29 @@ just a HTTP API. The endpoints are:
 
    * **GET /tweets** - returns a list of all tweets in the system
    * **POST /tweets** - creates a new tweet
-   * **GET /tweets/:tweet_id** - returns a specific tweet
-   * **DEL /tweets/:tweet_id** - deletes a specific tweet
-   * **GET /tweets/user/:userId** - returns a list of all the tweets
+   * **GET /tweets/:tweetId** - returns a specific tweet
+   * **DEL /tweets/:tweetId** - deletes a specific tweet
+   * **GET /tweets/user_timeline/:userId** - returns a list of all the tweets
      posted by the specified user
-   * **GET /tweets/followed/:userId** - returns a user's home timeline.
+   * **GET /tweets/home_timeline/:userId** - returns a user's home timeline (posts made by the users he follows)
 
-All endpoints return JSON.
-
-The endpoints are defined in *routes.go*.
+All endpoints return JSON. They are defined in *routes.go*.
 
 ## Internal Architecture
 
 ### Background
 
-Twitter's core functionality is pretty simple: save each users' tweets
-and return them in their followers' home timelines. If they didn't have any
-scalability issues, they could easily store and deliver tweets from
+If Twitter wasn't facing any
+scalability challenges, they could easily store and deliver tweets from
 a relational database, using a schema like:
 
 **User table**
 
 | id | username |
 |----|----------|
-| 1 | bob |
-| 2 | jane |
-| 3 | sue |
+| 1 | Bob |
+| 2 | Jane |
+| 3 | Sue |
 
 **Follow table**
 
@@ -71,49 +69,51 @@ a relational database, using a schema like:
 
 | id | user_id | message |
 |----|---------|---------|
-| 1 | 1 | hello world, i'm bob |
-| 2 | 2 | hello world, i'm jane |
+| 1 | 1 | Hello world, i'm Bob |
+| 2 | 2 | Hello world, i'm Jane |
 
-Then, in order to build the home timeline for user #3, Twitter would
+Then, in order to build the home timeline for user 3 (with username Sue), Twitter would
 only need to run a single SQL query:
 
 ```
-SELECT user.id, user.username, tweet.message FROM user
-INNER JOIN tweet ON user.id = tweet.user_id
-INNER JOIN follow ON user.id = follow.follower_id
-WHERE follow.follower_id = 3;
+SELECT tweet.id, user.username, tweet.message FROM user
+INNER JOIN follow ON user.id = follow.followed_id
+INNER JOIN tweet ON tweet.user_id = follow.followed_id
+WHERE follow.follower_id = 3
 ```
 
-The API would return results like:
+Because Sue is following Bob and Jane, who have each made one tweet, the API would return:
 
 ```
 {
     {
-	"userId" : "1",
-	"userName" : "bob",
-	"message" : "hello world, i'm bob"
+		"userId" : "1",
+		"userName" : "Bob",
+		"message" : "Hello world, i'm Bob"
     },
     {
-	"userId" : "2",
-	"userName" : "jane",
-	"message" : "hello world, i'm jane"
+		"userId" : "2",
+		"userName" : "Jane",
+		"message" : "Hello world, i'm Jane"
     }
 }
 ```
 
-But a triple-join query in a relational database did not scale very well,
-so Twitter decided to do something different. Instead of determining which
-tweets are in a user's home timeline each time the timeline is *read*,
+But a triple-join query didn't scale very well,
+so Twitter decided to do something different. Instead of assembling a home timeline's
+tweets each time it is *read*,
 Twitter updates home timelines anytime a new tweet is *written*.
-All users' home timelines are stored in a Redis key-value store, where the
-keys are user IDs and the values are lists of tweets. When a user requests
-their home timeline, Twitter already knows which tweets to show them.
+All users' home timelines are stored in a Redis key-value store. When a user requests
+their home timeline, Twitter fetches the tweet list from Redis with a single command.
 This denormalized, compute-on-write system
 allows them to return content faster and scale their system more effectively.
 
 ### Twit Architecture
 
-Twit includes an HTTP server that listens for requests to create, delete, and retrieve tweets.
+Like Twitter, Twit stores home timelines in Redis and updates them on write. On read, tweets
+are retrieved from Redis and additional data is added to them from Postgres.
+
+The entry point is an HTTP server that listens for requests to create, delete, and retrieve tweets.
 
    * Server command: *cmd/server/main.go*
    * Endpoint URLs and definitions: *routes.go*
@@ -152,6 +152,7 @@ and added to each tweet record.
 (Twitter calls this process "hydration"). The entire thing is then
 formatted as JSON and sent to the requester via HTTP.
 
+   * Home timeline endpoint handler: `homeTimelineTweets()` in *routes.go*
 
 *Note*: 
 Twit architecture resembles the Twitter architecture, though it does not
@@ -166,8 +167,16 @@ a retweet. Twit uses protocol buffers without any additional metadata.
 ## Tests
 
 Twit's Postgres-related functions are unittested with mocks from the
-[go-sqlmock](https://github.com/DATA-DOG/go-sqlmock) package. Its Redis-related
-functions are integration tested using a test Redis instance defined in `dbconf.yml`.
+[go-sqlmock](https://github.com/DATA-DOG/go-sqlmock) package.
+
+   * Test file: *pgconn_test.go*
+   
+Its Redis-related
+functions are integration tested using a test Redis instance defined in *db/dbconf.yml*.
+
+   * Test file: *redisconn_test.go*
+   
+Run all tests by running `go test` from the command line.
 
 ## File Glossary
 
@@ -195,5 +204,5 @@ Database Management
 
    * *db/dbconf.yml* - Postgres and Redis configurations
    * *db/migrations* - Postgres migrations (managed by [goose](http://bitbucket.org/liamstask/goose)).
-   * *db/create_test_records.sql* - SQL commands to pre-populate the database with user,
+   * *db/createTestRecords.sql* - SQL commands to pre-populate the database with user,
      tweet, and follow records.
