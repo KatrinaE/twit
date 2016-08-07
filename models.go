@@ -11,6 +11,11 @@ type Tweet struct {
 	Message string `json:"message"`
 }
 
+type DisplayTweet struct {
+	User
+	Tweet
+}
+
 type Follow struct {
 	Id         int `json:"id"`
 	FollowerId int `json:"followerId"`
