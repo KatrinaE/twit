@@ -1,18 +1,18 @@
 package twit
 
 type User struct {
-	Id       int
-	Username string
+	Id       int    `json:"id"`
+	Username string `json:"username"`
 }
 
 type Tweet struct {
-	Id      int
-	UserId  int
-	Message string
+	Id      int    `json:"id"`
+	UserId  int    `json:"userId"`
+	Message string `json:"message"`
 }
 
 type Follow struct {
-	Id         int
-	FollowerId int
-	FollowedId int
+	Id         int `json:"id"`
+	FollowerId int `json:"followerId"`
+	FollowedId int `json:"followedId"`
 }
