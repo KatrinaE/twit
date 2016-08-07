@@ -14,7 +14,6 @@ func dbInsertTweet(db *sql.DB, userId int, tweetMsg string) (Tweet, error) {
 	// Use Query instead of Exec b/c returning rows
 	err := db.QueryRow(sql, userId, tweetMsg).
 		Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
-	defer db.Close()
 	if err != nil {
 		return tweet, err
 	}
@@ -26,7 +25,6 @@ func dbGetTweet(db *sql.DB, tweetId int) (Tweet, error) {
 	query := "SELECT id, user_id, message FROM t_tweet WHERE id = $1"
 	row := db.QueryRow(query, tweetId)
 	err := row.Scan(&tweet.Id, &tweet.UserId, &tweet.Message)
-	db.Close()
 	if err != nil {
 		return tweet, err
 	}
@@ -35,7 +33,6 @@ func dbGetTweet(db *sql.DB, tweetId int) (Tweet, error) {
 
 func dbDelTweet(db *sql.DB, tweetId int) error {
 	_, err := db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
-	db.Close()
 	if err != nil {
 		return err
 	}
