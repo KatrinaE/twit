@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/spf13/viper"
@@ -28,6 +29,12 @@ func main() {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 
+	dbDriver, dbOpen := getDbConfig()
+	db, err := sql.Open(dbDriver, dbOpen)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Print("Running fanout loop")
-	twit.FanoutLoop()
+	twit.FanoutLoop(db)
 }

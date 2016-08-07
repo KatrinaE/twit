@@ -4,11 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
 )
 
-func fanout(tweet Tweet) {
-	followerA, err := dbQryUserFollowers(tweet.UserId)
+func fanout(db *sql.DB, tweet Tweet) {
+	followerA, err := dbQryUserFollowers(db, tweet.UserId)
 	if err != nil {
 		m := "Could not get followers for tweet "
 		m += fmt.Sprintf("%+v. Err: %+v", tweet, err)
@@ -30,10 +29,17 @@ func fanout(tweet Tweet) {
 	}
 }
 
-func FanoutLoop() {
+func FanoutLoop(db *sql.DB) {
 	for {
-		tweetId := redisGetNextQueuedTweetId()
-		tweet, err := dbGetTweet(tweetId)
+		tweetId, err := redisGetNextQueuedTweetId()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Note: need to do something if no tweetId is found. Not
+		// sure what format the result will be in in this situation.
+
+		tweet, err := dbGetTweet(db, tweetId)
 		if err != nil {
 			m := fmt.Sprintf("Could not get tweet %d, ", tweetId)
 			m += "although queued. "
@@ -43,7 +49,7 @@ func FanoutLoop() {
 			// real system, would want to log and follow up.
 			continue
 		}
-		fanout(tweet)
+		fanout(db, tweet)
 		redisDequeueTweetId(tweetId)
 	}
 }

@@ -1,8 +1,8 @@
 package twit
 
 import (
+	"database/sql"
 	"github.com/bmizerany/pat" // muxer
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -42,7 +42,7 @@ func createTweet(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
-	dbEnqueueTweetId(tweet.Id)
+	redisEnqueueTweetId(tweet.Id)
 	w.WriteHeader(http.StatusCreated)
 	writeJsonResponse(w, tweet)
 }
@@ -116,14 +116,7 @@ func followedTweets(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
-
-	dbDriver, dbOpen := getDbConfig()
-	db, err := sql.Open(dbDriver, dbOpen)
-	if err != nil {
-		writeErrorResponse(w, err)
-		return
-	}
-	tweetLites, err := redisGetHomeTimeline(db, userId)
+	tweetLites, err := redisGetHomeTimeline(userId)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return
@@ -134,6 +127,7 @@ func followedTweets(w http.ResponseWriter, req *http.Request) {
 
 func RegisterRoutes() *pat.PatternServeMux {
 	mux := pat.New()
+
 	mux.Get("/tweets", http.HandlerFunc(allTweets))
 	mux.Post("/tweets", http.HandlerFunc(createTweet))
 	mux.Get("/tweets/:tweetId", http.HandlerFunc(getTweet))

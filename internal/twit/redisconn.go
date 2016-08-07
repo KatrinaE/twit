@@ -66,18 +66,21 @@ func redisGetHomeTimeline(recipientId int) ([]TweetLite, error) {
 
 func redisEnqueueTweetId(tweetId int) error {
 	client := newRedisClient()
-	err := client.LPush("TweetReadyQueue", tweetId).Err()
+	tweetIdS := strconv.Itoa(tweetId)
+	err := client.LPush("TweetReadyQueue", tweetIdS).Err()
 	return err
 }
 
 func redisGetNextQueuedTweetId() (int, error) {
 	client := newRedisClient()
-	tweetId, err := client.RPopLPush("TweetReadyQueue", "TweetInProcessQueue").Result()
+	tweetIdS, err := client.RPopLPush("TweetReadyQueue", "TweetInProcessQueue").Result()
+	tweetId, err := strconv.Atoi(tweetIdS)
 	return tweetId, err
 }
 
 func redisDequeueTweetId(tweetId int) error {
 	client := newRedisClient()
-	err := client.LRem("TweetInProcessQueue", 1, tweetId).Err()
+	tweetIdS := strconv.Itoa(tweetId)
+	err := client.LRem("TweetInProcessQueue", 1, tweetIdS).Err()
 	return err
 }

@@ -73,7 +73,10 @@ func testRedisGetHomeTimeline(t *testing.T) {
 		}
 	}
 
-	tweetLiteA := redisGetHomeTimeline(recipientId)
+	tweetLiteA, err := redisGetHomeTimeline(recipientId)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 	if len(tweetLiteA) != len(tweetLiteFixtureA) {
 		t.Logf("tweetLiteA and tweetLiteFixtureA are not the same length")
 		t.Logf("tweetLiteA: %+v", tweetLiteA)
