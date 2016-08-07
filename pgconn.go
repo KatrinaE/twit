@@ -33,6 +33,15 @@ func dbGetTweet(db *sql.DB, tweetId int) (Tweet, error) {
 	return tweet, err
 }
 
+func dbDelTweet(db *sql.DB, tweetId int) error {
+	_, err := db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
+	db.Close()
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func dbQryTweets(db *sql.DB, whereClause string) ([]Tweet, error) {
 	tweetA := []Tweet{}
 	sA := []string{"SELECT id, user_id, message FROM t_tweet", whereClause}
@@ -70,15 +79,6 @@ func dbQryUserTweets(db *sql.DB, userId int) ([]Tweet, error) {
 	whereClause := fmt.Sprintf("WHERE user_id = %d", userId)
 	tweetA, err := dbQryTweets(db, whereClause)
 	return tweetA, err
-}
-
-func dbDelTweet(db *sql.DB, tweetId int) error {
-	_, err := db.Exec("DELETE FROM t_tweet WHERE id = $1", tweetId)
-	db.Close()
-	if err != nil {
-		return err
-	}
-	return err
 }
 
 func dbQryUserFollowers(db *sql.DB, userId int) ([]Follow, error) {
