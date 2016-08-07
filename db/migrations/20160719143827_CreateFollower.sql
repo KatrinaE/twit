@@ -1,6 +1,6 @@
 
 -- +goose Up
-CREATE TABLE t_follower (
+CREATE TABLE t_follow (
 id		SERIAL PRIMARY KEY,
 follower_id	INTEGER REFERENCES t_user(id) ON DELETE CASCADE,
 followed_id	INTEGER REFERENCES t_user(id) ON DELETE CASCADE,
@@ -10,4 +10,4 @@ mtime		TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 
 
 -- +goose Down
-DROP TABLE t_follower;
+DROP TABLE t_follow;
