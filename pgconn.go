@@ -97,3 +97,39 @@ func dbQryUserFollowers(db *sql.DB, userId int) ([]Follow, error) {
 	}
 	return followA, err
 }
+
+func dbQryDisplayTweets(db *sql.DB, whereClause string) ([]DisplayTweet, error) {
+	s := "SELECT t_user.id, t_user.username, t_tweet.id, " +
+		"t_tweet.user_id, t_tweet.message FROM t_user " +
+		"JOIN t_tweet ON t_user.id = t_tweet.user_id"
+	sA := []string{s, whereClause}
+	query := strings.Join(sA, " ")
+	rows, err := db.Query(query)
+	displayTweetA := []DisplayTweet{}
+	switch {
+	case err == sql.ErrNoRows:
+		// No problem
+		return displayTweetA, nil
+	case err != nil:
+		return displayTweetA, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var displayTweet DisplayTweet
+		err := rows.Scan(
+			&displayTweet.User.Id,
+			&displayTweet.User.Username,
+			&displayTweet.Tweet.Id,
+			&displayTweet.Tweet.UserId,
+			&displayTweet.Tweet.Message,
+		)
+		if err != nil {
+			return displayTweetA, err
+		}
+		displayTweetA = append(displayTweetA, displayTweet)
+	}
+	if err := rows.Err(); err != nil {
+		return displayTweetA, err
+	}
+	return displayTweetA, err
+}
