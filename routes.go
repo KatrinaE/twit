@@ -88,7 +88,7 @@ func deleteTweet(w http.ResponseWriter, req *http.Request) {
 	writeJsonResponse(w, response)
 }
 
-func userTweets(w http.ResponseWriter, req *http.Request) {
+func userTimelineTweets(w http.ResponseWriter, req *http.Request) {
 	userIdS := req.URL.Query().Get(":userId")
 	userId, err := strconv.Atoi(userIdS)
 	if err != nil {
@@ -110,7 +110,7 @@ func userTweets(w http.ResponseWriter, req *http.Request) {
 	writeJsonResponse(w, tweetA)
 }
 
-func followedTweets(w http.ResponseWriter, req *http.Request) {
+func homeTimelineTweets(w http.ResponseWriter, req *http.Request) {
 	userIdS := req.URL.Query().Get(":userId")
 	userId, err := strconv.Atoi(userIdS)
 	if err != nil {
@@ -134,7 +134,7 @@ func RegisterRoutes() *pat.PatternServeMux {
 	mux.Post("/tweets", http.HandlerFunc(createTweet))
 	mux.Get("/tweets/:tweetId", http.HandlerFunc(getTweet))
 	mux.Del("/tweets/:tweetId", http.HandlerFunc(deleteTweet))
-	mux.Get("/tweets/user/:userId", http.HandlerFunc(userTweets))
-	mux.Get("/tweets/followed/:userId", http.HandlerFunc(followedTweets))
+	mux.Get("/tweets/user_timeline/:userId", http.HandlerFunc(userTimelineTweets))
+	mux.Get("/tweets/home_timeline/:userId", http.HandlerFunc(homeTimelineTweets))
 	return mux
 }
