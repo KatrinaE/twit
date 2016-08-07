@@ -41,7 +41,7 @@ func redisInsertTweet(client *redis.Client, recipientId int, tweet Tweet) error 
 
 func redisGetHomeTimeline(client *redis.Client, recipientId int) ([]TweetLite, error) {
 	recipientIdStr := strconv.Itoa(recipientId)
-	result, err := client.LRange(recipientIdStr, 0, 1).Result()
+	result, err := client.LRange(recipientIdStr, 0, -1).Result()
 	if err != nil {
 		panic(err)
 	}
