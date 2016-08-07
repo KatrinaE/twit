@@ -42,7 +42,8 @@ func createTweet(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
-	redisEnqueueTweetId(tweet.Id)
+	redisClient := newRedisClient()
+	redisEnqueueTweetId(redisClient, tweet.Id)
 	w.WriteHeader(http.StatusCreated)
 	writeJsonResponse(w, tweet)
 }
@@ -116,7 +117,8 @@ func followedTweets(w http.ResponseWriter, req *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
-	tweetLites, err := redisGetHomeTimeline(userId)
+	redisClient := newRedisClient()
+	tweetLites, err := redisGetHomeTimeline(redisClient, userId)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return

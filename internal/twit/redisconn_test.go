@@ -20,17 +20,17 @@ func testRedisInsertTweet(t *testing.T) {
 		Id:     proto.Int(tweetId),
 		UserId: proto.Int(userId),
 	}
-	client := newRedisClient()
-	err := redisInsertTweet(recipientId, tweetFixture)
+	redisClient := newRedisClient()
+	err := redisInsertTweet(redisClient, recipientId, tweetFixture)
 	if err != nil {
 		t.Logf("%+v", err)
-		client.Del(recipientIdStr)
+		redisClient.Del(recipientIdStr)
 		t.FailNow()
 	}
-	result, err := client.LPop(recipientIdStr).Result()
+	result, err := redisClient.LPop(recipientIdStr).Result()
 	if err != nil {
 		t.Logf("%+v", err)
-		client.Del(recipientIdStr)
+		redisClient.Del(recipientIdStr)
 		t.FailNow()
 	}
 	b := []byte(result)
@@ -38,16 +38,16 @@ func testRedisInsertTweet(t *testing.T) {
 	proto.Unmarshal(b, &tweetLite)
 	if tweetLite.UserId != tweetLiteFixture.UserId {
 		t.Logf("Wanted: %+v -- Got: %+v", tweetLiteFixture, tweetLite)
-		client.Del(recipientIdStr)
+		redisClient.Del(recipientIdStr)
 		t.FailNow()
 	}
 	if tweetLite.Id != tweetLiteFixture.Id {
 		t.Logf("Wanted: %+v -- Got: %+v", tweetLiteFixture, tweetLite)
-		client.Del(recipientIdStr)
+		redisClient.Del(recipientIdStr)
 		t.FailNow()
 	}
 
-	client.Del(recipientIdStr)
+	redisClient.Del(recipientIdStr)
 }
 
 func testRedisGetHomeTimeline(t *testing.T) {
@@ -57,23 +57,23 @@ func testRedisGetHomeTimeline(t *testing.T) {
 		TweetLite{Id: proto.Int(1), UserId: proto.Int(1)},
 		TweetLite{Id: proto.Int(2), UserId: proto.Int(1)},
 	}
-	client := newRedisClient()
+	redisClient := newRedisClient()
 	for _, tweetLite := range tweetLiteFixtureA {
 		tweetLitePb, err := proto.Marshal(&tweetLite)
 		if err != nil {
 			t.Logf("%+v", err)
-			client.Del(recipientIdStr)
+			redisClient.Del(recipientIdStr)
 			t.FailNow()
 		}
-		err = client.LPush(recipientIdStr, tweetLitePb).Err()
+		err = redisClient.LPush(recipientIdStr, tweetLitePb).Err()
 		if err != nil {
 			t.Logf("%+v", err)
-			client.Del(recipientIdStr)
+			redisClient.Del(recipientIdStr)
 			t.FailNow()
 		}
 	}
 
-	tweetLiteA, err := redisGetHomeTimeline(recipientId)
+	tweetLiteA, err := redisGetHomeTimeline(redisClient, recipientId)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -81,7 +81,7 @@ func testRedisGetHomeTimeline(t *testing.T) {
 		t.Logf("tweetLiteA and tweetLiteFixtureA are not the same length")
 		t.Logf("tweetLiteA: %+v", tweetLiteA)
 		t.Logf("tweetLiteFixtureA: %+v", tweetLiteFixtureA)
-		client.Del(recipientIdStr)
+		redisClient.Del(recipientIdStr)
 		t.FailNow()
 	}
 
@@ -89,15 +89,15 @@ func testRedisGetHomeTimeline(t *testing.T) {
 		if tweetLiteA[i].UserId != tweetLiteFixtureA[i].UserId {
 			t.Logf("Wanted: %+v -- Got: %+v",
 				tweetLiteFixtureA, tweetLiteA)
-			client.Del(recipientIdStr)
+			redisClient.Del(recipientIdStr)
 			t.FailNow()
 		}
 		if tweetLiteA[i].Id != tweetLiteFixtureA[i].Id {
 			t.Logf("Wanted: %+v -- Got: %+v",
 				tweetLiteFixtureA, tweetLiteA)
-			client.Del(recipientIdStr)
+			redisClient.Del(recipientIdStr)
 			t.FailNow()
 		}
 	}
-	client.Del(recipientIdStr)
+	redisClient.Del(recipientIdStr)
 }

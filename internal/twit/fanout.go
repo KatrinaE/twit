@@ -15,7 +15,8 @@ func fanout(db *sql.DB, tweet Tweet) {
 		return
 	}
 	for _, follower := range followerA {
-		err := redisInsertTweet(follower.Id, tweet)
+		redisClient := newRedisClient()
+		err := redisInsertTweet(redisClient, follower.Id, tweet)
 		if err != nil {
 			m := fmt.Sprintf("Could not insert tweet %d ", tweet.Id)
 			m += fmt.Sprintf("for user %d", follower.Id)
@@ -31,7 +32,8 @@ func fanout(db *sql.DB, tweet Tweet) {
 
 func FanoutLoop(db *sql.DB) {
 	for {
-		tweetId, err := redisGetNextQueuedTweetId()
+		redisClient := newRedisClient()
+		tweetId, err := redisGetNextQueuedTweetId(redisClient)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -50,6 +52,6 @@ func FanoutLoop(db *sql.DB) {
 			continue
 		}
 		fanout(db, tweet)
-		redisDequeueTweetId(tweetId)
+		redisDequeueTweetId(redisClient, tweetId)
 	}
 }
