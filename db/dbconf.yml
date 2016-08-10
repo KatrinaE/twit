@@ -1,0 +1,17 @@
+environment: development
+
+development:
+  driver: postgres
+  open: user=DB_USER dbname=DB_NAME sslmode=disable
+  redis:
+    address: "localhost:6379"
+    password: ""
+    db: 0
+    
+test:
+  driver: postgres
+  open: user=TESTDB_USER dbname=TESTDB_NAME sslmode=disable
+  redis:
+    address: "localhost:6379"
+    password: ""
+    db: 0
