@@ -19,12 +19,67 @@ interact with it. Like I said, this is a toy for learning, not a real system :-)
 
 ## Installation
 
-TODO
+### Get the code
 
-Topics:
+```
+$ go get github.com/katrinae/twit
+```
 
-   * data store configuration
-   * test data import
+### Set up Redis
+
+If you want to actually run Twit, you'll need to have Redis installed.
+See the [Redis homepage](http://www.redis.io/) if you need help with installation.
+Once it's installed, you can run it with:
+
+```
+$ redis
+```
+
+### Set up Postgres
+
+You'll also need to have Postgres installed to run Twit. See [this tutorial](https://www.codefellows.org/blog/three-battle-tested-ways-to-install-postgresql/)
+for installation help. Once you have Postgres up and running, you can create your development database with
+the `createdb` command-line tool:
+
+```
+$ createdb {DB_NAME} --owner {DB_USER}
+```
+
+#### Create the Postgres schema
+
+Twit uses [goose](https://bitbucket.org/liamstask/goose/) to manage its database schema. To install goose and create the database tables, run:
+
+```
+$ go get bitbucket.org/liamstask/goose/cmd/goose
+$ goose up
+```
+
+#### Import test data
+
+Because Twit does not allow you to create or modify users, it ships with some test data.
+You can import this data into Postgres from with psql, the Postgres shell.
+Replace $GOPATH with your actual gopath; environment variables are not recognized in the shell.
+
+```
+$ psql --dbname=DB_NAME --username=DB_USER
+=# \i $GOPATH/github.com/katrinae/twit/db/createTestRecords.sql;
+```
+
+### Customize your conf file
+
+Edit the file *db/dbconf.yml* with the parameters for the Redis and Postgres
+instances you will be using. At the very least, you will want to change DB_NAME
+and DB_USER to match your environment.
+
+When you are done editing, remove the file from
+your git worktree with:
+
+```
+$ git update-index --assume-unchanged db/dbconf.yml
+```
+
+(This is to prevent you from accidentally pushing your private credentials
+somewhere).
 
 ## API
 
