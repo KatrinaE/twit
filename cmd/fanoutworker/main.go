@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/spf13/viper"
-	"local/twit"
+	"github.com/katrinae/twit"
 	"log"
 )
 
